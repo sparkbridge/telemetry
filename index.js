@@ -1,5 +1,5 @@
 //spark.debug = true;
-const lg = require('./handles/logger');
+const lg = require('../../handles/logger');
 const logger = lg.getLogger('telemetry');
 const { WebConfigBuilder, WebConfigTye } = require('./webConfig');
 const _config = spark.getFileHelper('telemetry');
@@ -15,7 +15,6 @@ var GConfig = {};
 spark.setOwnProperty("telemetry", { WebConfigBuilder, WebConfigTye });
 
 spark.on("event.telemetry.pushconfig", (cObj) => {
-    console.log("get", cObj.plname);
     if (GConfig[cObj.plname]) {
         return;
     }
@@ -78,7 +77,6 @@ const server = http.createServer(async (req, res) => {
                 const content = await fs.readFile(filePath, 'utf-8');
                 res.writeHead(200, { 'Content-Type': 'text/html' });
                 res.end(content);
-                console.log("end");
             } catch (e) {
                 console.log(e);
             }
