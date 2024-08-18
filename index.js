@@ -1,5 +1,12 @@
-spark.debug = true;
+//spark.debug = true;
 const { WebConfigBuilder, WebConfigTye } = require('./webConfig');
+const _config = spark.getFileHelper('telemetry');
+_config.initFile('config.json', {
+    webPort: 3002,
+    lock_panel:true,
+    allow_global: true
+});
+var config = JSON.parse(_config.getFile('config.json'));
 
 var GConfig = {};
 
@@ -15,15 +22,17 @@ spark.on("event.telemetry.pushconfig", (cObj) => {
 spark.emit("event.telemetry.ready");
 
 spark.on("event.telemetry.updateconfig_telemetry",(id,changeK,value)=>{
-    console.log("触发回调",id,changeK,value);
+    // console.log("触发回调",id,changeK,value);
+    config[changeK] = value;
+    _config.updateFile('config.json',config);
 })
 
 
 const wbc = new WebConfigBuilder("telemetry");
-wbc.addNumber("webPort", 3002,"网页端口");
-wbc.addSwitch("allow_global",true,"是否允许外网访问");
-wbc.addSwitch("lock_panel",false,"是否锁定面板,锁定后只能提供私聊机器人获取临时密码");
-wbc.addChoosing("theme",['白天','夜间'],1,"主题");
+wbc.addNumber("webPort", config.webPort,"网页端口");
+wbc.addSwitch("allow_global",config.allow_global,"是否允许外网访问");
+wbc.addSwitch("lock_panel",config.lock_panel,"是否锁定面板,锁定后只能提供私聊机器人获取临时密码");
+// wbc.addChoosing("theme",['白天','夜间'],1,"主题");
 spark.emit("event.telemetry.pushconfig",wbc);
 
 const http = require('http');
@@ -137,7 +146,11 @@ function handleApiRequest(apiName, requestBody, method, res) {
             var  responseContent  = {}
             switch(apiName){
                 case "update_global_config":
-                    spark.emit("event.telemetry.updateconfig_"+parsedBody.plugin_id,parsedBody.plugin_id,parsedBody.changeK,parsedBody.value);
+                    let cgK = parsedBody.value;
+                    if(GConfig[parsedBody.plugin_id][parsedBody.changeK].type == 5){
+                        cgK = Number(parsedBody.value);
+                    }
+                    spark.emit("event.telemetry.updateconfig_"+parsedBody.plugin_id,parsedBody.plugin_id,parsedBody.changeK,cgK);
                     responseContent.code = 0;
                     break;
 
@@ -152,8 +165,8 @@ function handleApiRequest(apiName, requestBody, method, res) {
     }
 }
 
-server.listen(3002, () => {
-    console.log('服务器运行在 http://localhost:3002/');
+server.listen(config.webPort, () => {
+    console.log('服务器运行在 http://localhost:'+config.webPort+'/');
 });
 
 
