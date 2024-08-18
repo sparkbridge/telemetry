@@ -1,4 +1,6 @@
 //spark.debug = true;
+const lg = require('./handles/logger');
+const logger = lg.getLogger('telemetry');
 const { WebConfigBuilder, WebConfigTye } = require('./webConfig');
 const _config = spark.getFileHelper('telemetry');
 _config.initFile('config.json', {
@@ -35,6 +37,8 @@ wbc.addSwitch("lock_panel",config.lock_panel,"是否锁定面板,锁定后只能
 // wbc.addChoosing("theme",['白天','夜间'],1,"主题");
 spark.emit("event.telemetry.pushconfig",wbc);
 
+// 以下为http服务器部分
+
 const http = require('http');
 const { parse } = require('url');
 const fs = require('fs').promises;
@@ -70,7 +74,6 @@ const server = http.createServer(async (req, res) => {
                 if (pageName.includes(".html")) {
                     pageName = pageName.replace(".html", "");
                 }
-                console.log(pageName);
                 const filePath = `${__dirname}/web/${pageName}.html`;
                 const content = await fs.readFile(filePath, 'utf-8');
                 res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -120,7 +123,7 @@ const server = http.createServer(async (req, res) => {
 
 // 定义处理API请求的函数
 function handleApiRequest(apiName, requestBody, method, res) {
-    console.log(apiName);
+    // console.log(apiName);
 
     // 根据不同的请求方法处理API请求
     if (method === 'GET') {
@@ -128,7 +131,6 @@ function handleApiRequest(apiName, requestBody, method, res) {
         var responseContent = {};
         switch (apiName) {
             case "globa_config":
-                console.log("1");
                 responseContent = {
                     status: 'success',
                     message: `GET request for ${apiName} received.`,
@@ -142,7 +144,6 @@ function handleApiRequest(apiName, requestBody, method, res) {
         // 处理POST请求
         try {
             const parsedBody = requestBody ? JSON.parse(requestBody) : {};
-            console.log(parsedBody);
             var  responseContent  = {}
             switch(apiName){
                 case "update_global_config":
@@ -166,7 +167,7 @@ function handleApiRequest(apiName, requestBody, method, res) {
 }
 
 server.listen(config.webPort, () => {
-    console.log('服务器运行在 http://localhost:'+config.webPort+'/');
+    logger.info('服务器运行在 http://localhost:'+config.webPort+'/');
 });
 
 
